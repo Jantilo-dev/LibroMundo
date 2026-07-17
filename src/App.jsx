@@ -2,8 +2,9 @@
 // IMPORTACIONES
 // ==========================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // useState: Maneja el estado global del carrito
+// useEffect: Persiste el carrito en localStorage
 
 import { Routes, Route } from 'react-router-dom';
 // Routes y Route: Sistema de enrutamiento (Home y Carrito)
@@ -26,21 +27,27 @@ import './styles/custom.css';
 // ==========================================
 
 function App() {
-  // Estado global del carrito (compartido entre todos los componentes)
-  const [cartCount, setCartCount] = useState(0);
-  // cartCount: Número total de items
-  // setCartCount: Función para actualizar el contador
+  // Estado del carrito: se inicializa desde localStorage si hay datos guardados
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('libromundo_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  const [cartItems, setCartItems] = useState([]);
-  // cartItems: Array con los libros en el carrito
-  // setCartItems: Función para agregar/eliminar libros
+  // cartCount: derivado de cartItems, no necesita estado propio
+  const cartCount = cartItems.length;
+
+  // Persiste el carrito en localStorage cada vez que cambia
+  useEffect(() => {
+    localStorage.setItem('libromundo_cart', JSON.stringify(cartItems));
+  }, [cartItems]);
 
   // Función: Eliminar un libro del carrito por su ID
   const removeFromCart = (id) => {
-    // filter: Crea nuevo array sin el libro con ese ID
-    const newCart = cartItems.filter(item => item.id !== id);
-    setCartItems(newCart); // Actualiza el array
-    setCartCount(newCart.length); // Actualiza el contador
+    setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
   return (
@@ -61,8 +68,7 @@ function App() {
             <BookCarousel />
             {/* BookGrid: Recibe props para manejar el carrito */}
             <BookGrid 
-              cartCount={cartCount} 
-              setCartCount={setCartCount}
+              cartCount={cartCount}
               cartItems={cartItems}
               setCartItems={setCartItems}
             />
@@ -77,7 +83,6 @@ function App() {
             cartItems={cartItems}
             setCartItems={setCartItems}
             cartCount={cartCount}
-            setCartCount={setCartCount}
           />
         } />
       </Routes>

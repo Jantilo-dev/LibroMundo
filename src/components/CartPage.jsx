@@ -12,7 +12,7 @@ import { createPedido } from '../services/api';
 // COMPONENTE PRINCIPAL
 // ==========================================
 
-const CartPage = ({ cartItems = [], setCartItems, cartCount, setCartCount }) => {
+const CartPage = ({ cartItems = [], setCartItems, cartCount }) => {
   // Props del carrito desde App
 
   const navigate = useNavigate();
@@ -48,15 +48,12 @@ const CartPage = ({ cartItems = [], setCartItems, cartCount, setCartCount }) => 
 
   // Función: Eliminar libro del carrito
   const removeFromCart = (id) => {
-    const newCart = cartItems.filter(item => item.id !== id);
-    setCartItems(newCart);
-    setCartCount(newCart.length);
+    setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
   // Función: Vaciar carrito
   const clearCart = () => {
     setCartItems([]);
-    setCartCount(0);
   };
 
   // Función: Volver a la tienda
@@ -109,7 +106,6 @@ const CartPage = ({ cartItems = [], setCartItems, cartCount, setCartCount }) => 
       setOrderPlaced(true);
       alert('Pedido realizado con exito!');
       setCartItems([]);
-      setCartCount(0);
       setOrderPlaced(false);
       setShowCheckout(false);
       navigate('/');

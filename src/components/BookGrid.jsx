@@ -19,7 +19,7 @@ import BookModal from './BookModal';
 // COMPONENTE PRINCIPAL
 // ==========================================
 
-const BookGrid = ({ cartCount, setCartCount, cartItems, setCartItems }) => {
+const BookGrid = ({ cartCount, cartItems, setCartItems }) => {
   // Props del carrito desde App
 
   // Estados locales
@@ -80,7 +80,6 @@ const BookGrid = ({ cartCount, setCartCount, cartItems, setCartItems }) => {
   // Manejador: Agregar al carrito
   const handleAddToCart = (book) => {
     setCartItems(prevCart => [...prevCart, book]);
-    setCartCount(prev => prev + 1);
     
     // Notificación temporal (3 segundos)
     const notification = document.createElement('div');
