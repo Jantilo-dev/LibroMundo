@@ -44,16 +44,19 @@ const Hero = () => {
           </Col>
           
           {/* Columna derecha: Imagen (solo en desktop) */}
-          <Col lg={5} className="d-none d-lg-block">
+          <Col lg={5} className="d-none d-lg-block text-center">
             <img 
-              src="https://covers.openlibrary.org/b/isbn/9780307474728-M.jpg" 
+              src="/Logo.jpg" 
               alt="LibroMundo" 
-              className="img-fluid rounded-circle shadow-lg"
+              className="img-fluid"
               style={{ 
                 maxWidth: '100%', 
-                height: '300px', 
-                width: '300px',
-                objectFit: 'cover'
+                maxHeight: '300px',
+                width: 'auto',
+                objectFit: 'contain',
+                borderRadius: '24px',
+                filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.3))',
+                opacity: 0.85
               }}
             />
           </Col>

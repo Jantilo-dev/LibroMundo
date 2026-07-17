@@ -4,17 +4,17 @@
 
 export const booksData = [
   {
-    id: 1,                                    // ID único para identificar cada libro
-    title: "Cien Años de Soledad",            // Título del libro
-    author: "Gabriel García Márquez",         // Autor
-    price: 19990,                             // Precio en pesos chilenos
-    category: "novela",                       // Categoría (para filtros)
-    format: "fisico",                         // Formato: "fisico" o "ebook"
-    image: "https://covers.openlibrary.org/b/isbn/9780307474728-M.jpg", // Imagen
+    id: 1,
+    title: "Cien Años de Soledad",
+    author: "Gabriel García Márquez",
+    price: 19990,
+    category: "novela",
+    format: "fisico",
+    image: "https://covers.openlibrary.org/b/isbn/9780307474728-M.jpg",
     description: "Una de las obras más importantes de la literatura universal...",
-    year: 1967,                               // Año de publicación
-    pages: 496,                               // Número de páginas
-    video: "/videos/100-anos-soledad.mp4"     // Video (opcional)
+    year: 1967,
+    pages: 496,
+    video: "a5evsIcpsLQ"
   },
   {
     id: 2,
@@ -27,7 +27,7 @@ export const booksData = [
     description: "Un clásico que narra las aventuras de un pequeño príncipe que viaja por el universo...",
     year: 1943,
     pages: 96,
-    video: "/videos/el-principito.mp4"
+    video: "a03jNKdbIWg"
   },
   {
     id: 3,
@@ -40,7 +40,7 @@ export const booksData = [
     description: "Una distopía donde el Gran Hermano vigila todos los movimientos de los ciudadanos.",
     year: 1949,
     pages: 328,
-    video: "/videos/1984.mp4"
+    video: "qLraA3KjY68"
   },
   {
     id: 4,
@@ -53,7 +53,7 @@ export const booksData = [
     description: "La obra más importante de la literatura española, con las aventuras del ingenioso hidalgo.",
     year: 1605,
     pages: 896,
-    video: "/videos/quijote.mp4"
+    video: "j4nNNjlYlOo"
   },
   {
     id: 5,
@@ -66,7 +66,7 @@ export const booksData = [
     description: "Un joven pastor viaja desde España hasta Egipto en busca de un tesoro y el sentido de la vida.",
     year: 1988,
     pages: 208,
-    video: "/videos/alquimista.mp4"
+    video: "1c6GgZwsxlc"
   },
   {
     id: 6,
@@ -79,9 +79,8 @@ export const booksData = [
     description: "Saga familiar que mezcla realismo mágico y crítica social a través de varias generaciones.",
     year: 1982,
     pages: 480,
-    video: "/videos/casa-espiritus.mp4"
+    video: "er-6ZICeHfk"
   },
-  
 ];
 
 // ==========================================

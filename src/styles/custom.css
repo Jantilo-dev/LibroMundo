@@ -99,6 +99,36 @@ html {
   font-weight: 700;
 }
 
+.book-card .img-wrapper {
+  background: #e9ecef;
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.book-card .img-wrapper .card-img-top {
+  max-height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  padding: 10px;
+  transition: transform 0.3s ease;
+}
+
+.book-card:hover .img-wrapper .card-img-top {
+  transform: scale(1.05);
+}
+
+.book-card .badge-format {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 5px 10px;
+}
+
 /* ============================================
    FAQ SECTION
    ============================================ */

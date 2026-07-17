@@ -47,21 +47,20 @@ const BookModal = ({ show, book, onClose, onAddToCart }) => {
               {book.format === 'ebook' ? '📱 E-book' : '📖 Físico'}
             </Badge>
 
-            {/* Video: Si el libro tiene video */}
+            {/* Video: Si el libro tiene video de YouTube */}
             {book.video && (
               <div className="mt-3">
                 <div className="d-flex align-items-center justify-content-center mb-2">
                   <FaVideo className="text-danger me-2" />
-                  <small className="fw-bold">🎬 Vista previa del libro</small>
+                  <small className="fw-bold">Video resena del libro</small>
                 </div>
-                <video 
-                  controls
-                  width="100%"
-                  style={{ borderRadius: '8px', maxHeight: '200px', backgroundColor: '#000' }}
-                >
-                  <source src={book.video} type="video/mp4" />
-                  <p className="text-white p-3">Tu navegador no soporta el elemento de video.</p>
-                </video>
+                <div className="ratio ratio-16x9">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${book.video}`}
+                    title={book.title}
+                    allowFullScreen
+                  ></iframe>
+                </div>
               </div>
             )}
           </Col>

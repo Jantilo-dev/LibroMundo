@@ -24,20 +24,19 @@ const BookCard = ({ book, onBookClick, onAddToCart }) => {
     <Card className="book-card shadow-sm h-100" onClick={() => onBookClick(book)}>
       
       {/* Contenedor de imagen con badge */}
-      <div style={{ position: 'relative', overflow: 'hidden' }}>
+      <div className="img-wrapper">
         <Card.Img 
           variant="top" 
           src={book.image} 
           alt={book.title}
-          style={{ height: '250px', objectFit: 'cover' }}
         />
         
         {/* Badge: Muestra formato (E-book o Físico) */}
         <Badge 
           bg={book.format === 'ebook' ? 'info' : 'secondary'}
-          style={{ position: 'absolute', top: '10px', right: '10px', padding: '5px 10px' }}
+          className="badge-format"
         >
-          {book.format === 'ebook' ? '📱 E-book' : '📖 Físico'}
+          {book.format === 'ebook' ? 'E-book' : 'Fisico'}
         </Badge>
       </div>
 
