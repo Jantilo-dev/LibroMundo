@@ -17,6 +17,7 @@ import FAQAccordion from './components/FAQAccordion';
 import Newsletter from './components/Newsletter';
 import Footer from './components/Footer';
 import CartPage from './components/CartPage';
+import AdminPanel from './components/AdminPanel';
 // Todos los componentes de la aplicación
 
 import './styles/custom.css';
@@ -85,6 +86,9 @@ function App() {
             cartCount={cartCount}
           />
         } />
+        
+        {/* Ruta del panel admin: CRUD de pedidos */}
+        <Route path="/admin" element={<AdminPanel />} />
       </Routes>
 
       {/* Footer: Visible en todas las páginas */}

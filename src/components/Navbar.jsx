@@ -139,6 +139,17 @@ const NavbarComponent = ({ cartCount = 0, cartItems = [], removeFromCart = null 
               Newsletter
             </Nav.Link>
 
+            {/* Enlace: Admin */}
+            <Nav.Link 
+              as={Link} 
+              to="/admin" 
+              className="nav-link" 
+              style={{ color: 'rgba(255,255,255,0.8)' }}
+              onClick={() => setExpanded(false)}
+            >
+              Admin
+            </Nav.Link>
+
             {/* ===== DROPDOWN DEL CARRITO ===== */}
             <Dropdown align="end" className="ms-2">
               
