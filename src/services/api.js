@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://apiclases.inacode.cl/'
+const BASE_URL = import.meta.env.VITE_API_URL
 
 // Crea un nuevo pedido (POST /libreria)
 export async function createPedido(data) {
