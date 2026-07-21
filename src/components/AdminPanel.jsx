@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Table, Button, Form, Modal, Badge } from 'react-bootstrap';
-import { getPedidos, updatePedido, deletePedido } from '../services/api';
-import { FaEdit, FaTrash, FaSync } from 'react-icons/fa';
+import { getPedidos, getPedido, updatePedido, deletePedido } from '../services/api';
+import { FaEdit, FaTrash, FaSync, FaEye } from 'react-icons/fa';
 
 export default function AdminPanel() {
   const [pedidos, setPedidos] = useState([]);
@@ -11,6 +11,9 @@ export default function AdminPanel() {
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState({ estado: '' });
   const [editId, setEditId] = useState(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [detailData, setDetailData] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => { fetchPedidos() }, []);
 
@@ -42,6 +45,19 @@ export default function AdminPanel() {
       await fetchPedidos();
     } catch (e) {
       setError('Error al actualizar: ' + e.message);
+    }
+  }
+
+  async function handleViewDetail(id) {
+    try {
+      setDetailLoading(true);
+      const data = await getPedido(id);
+      setDetailData(data.datos || data);
+      setShowDetail(true);
+    } catch (e) {
+      setError('Error al cargar detalle: ' + e.message);
+    } finally {
+      setDetailLoading(false);
     }
   }
 
@@ -102,6 +118,9 @@ export default function AdminPanel() {
                   </td>
                   <td>{p.fecha || '-'}</td>
                   <td>
+                    <Button variant="outline-info" size="sm" className="me-1" onClick={() => handleViewDetail(p._id)}>
+                      <FaEye />
+                    </Button>
                     <Button variant="outline-primary" size="sm" className="me-1" onClick={() => handleEdit(p)}>
                       <FaEdit />
                     </Button>
@@ -115,6 +134,58 @@ export default function AdminPanel() {
           </Table>
         </div>
       )}
+
+      <Modal show={showDetail} onHide={() => setShowDetail(false)} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Detalle del pedido</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {detailLoading ? (
+            <p className="text-center text-muted">Cargando detalle...</p>
+          ) : detailData ? (
+            <>
+              <h6 className="fw-bold border-bottom pb-2">Cliente</h6>
+              <p className="mb-1"><strong>Nombre:</strong> {detailData.cliente?.nombre || '-'}</p>
+              <p className="mb-1"><strong>Email:</strong> {detailData.cliente?.email || '-'}</p>
+              <p className="mb-3"><strong>Direccion:</strong> {detailData.cliente?.direccion || '-'}</p>
+
+              <h6 className="fw-bold border-bottom pb-2">Items ({detailData.items?.length || 0})</h6>
+              {detailData.items?.length > 0 ? (
+                <Table size="sm" className="mb-3">
+                  <thead>
+                    <tr>
+                      <th>Titulo</th>
+                      <th>Precio</th>
+                      <th>Cantidad</th>
+                      <th>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detailData.items.map((item, i) => (
+                      <tr key={i}>
+                        <td>{item.titulo}</td>
+                        <td>${Number(item.precio).toLocaleString('es-CL')}</td>
+                        <td>{item.cantidad}</td>
+                        <td>${(Number(item.precio) * Number(item.cantidad)).toLocaleString('es-CL')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              ) : (
+                <p className="text-muted small mb-3">Sin items</p>
+              )}
+
+              <h6 className="fw-bold border-bottom pb-2">Resumen</h6>
+              <p className="mb-1"><strong>Total:</strong> ${Number(detailData.total).toLocaleString('es-CL')}</p>
+              <p className="mb-1"><strong>Metodo de entrega:</strong> {detailData.metodoEntrega || '-'}</p>
+              <p className="mb-1"><strong>Estado:</strong> <Badge bg={detailData.estado === 'pendiente' ? 'warning' : 'success'}>{detailData.estado}</Badge></p>
+              <p className="mb-0"><strong>Fecha:</strong> {detailData.fecha || '-'}</p>
+            </>
+          ) : (
+            <p className="text-muted">No se encontro el pedido.</p>
+          )}
+        </Modal.Body>
+      </Modal>
 
       <Modal show={showEdit} onHide={() => setShowEdit(false)} centered>
         <Modal.Header closeButton>
