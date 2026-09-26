@@ -19,24 +19,119 @@
 
 ## 1. Autenticación
 
-### `POST /api/auth/token/` — Obtener token
+Toda la API está protegida. Para consumir cualquier endpoint (excepto
+`POST /api/auth/token/`) necesitas un **token de autenticación**.
 
-| Campo | Tipo | Requerido |
-|---|---|---|
-| `username` | string | ✅ |
-| `password` | string | ✅ |
+---
+
+### 1.1 ¿Qué es el token y cómo se usa?
+
+Es una cadena de texto que identifica a un usuario. Se envía en el header
+`Authorization` de cada petición:
+
+```
+Authorization: Token <tu_token>
+```
+
+Si lo omites o es inválido, la API responde `401 Unauthorized`:
+
+```json
+{ "detail": "Las credenciales de autenticación no se proveyeron." }
+```
+
+---
+
+### 1.2 Paso 1 — Crear un superusuario
+
+El token pertenece a un usuario. Primero crea uno (se te pedirá usuario, email
+y contraseña):
+
+```bash
+python manage.py createsuperuser
+```
+
+> En este proyecto ya existe el usuario `admin` con contraseña `admin123`.
+
+---
+
+### 1.3 Paso 2 — Obtener tu token (dos formas)
+
+#### Forma A — Por línea de comandos (rápida)
+
+```bash
+python manage.py drf_create_token <tu_usuario>
+```
+
+Ejemplo:
+
+```bash
+python manage.py drf_create_token admin
+# Salida: Generated token 35aaa56527362d5c325664eb9c75c7b6036c1409 for user admin
+```
+
+#### Forma B — Por HTTP (el endpoint)
+
+Si ya tienes usuario y contraseña, pídele el token a la API.
+
+**Endpoint:** `POST /api/auth/token/`
+
+| Parámetro | Tipo | Requerido | Descripción |
+|---|---|---|---|
+| `username` | string | ✅ | El nombre de usuario |
+| `password` | string | ✅ | La contraseña del usuario |
 
 **Request**
 ```json
-{ "username": "admin", "password": "admin123" }
+{
+  "username": "admin",
+  "password": "admin123"
+}
 ```
 
 **Respuesta `200 OK`**
 ```json
-{ "token": "35aaa56527362d5c325664eb9c75c7b6036c1409" }
+{
+  "token": "35aaa56527362d5c325664eb9c75c7b6036c1409"
+}
 ```
 
-**Errores:** `400` (credenciales inválidas).
+**Posibles errores**
+
+| Código | Respuesta | Motivo |
+|---|---|---|
+| `400` | `{ "detail": "Las credenciales de autenticación no se proveyeron." }` | Falta `username` o `password` |
+| `400` | `{ "non_field_errors": [ "No pudimos autenticar con esas credenciales." ] }` | Usuario o contraseña incorrectos |
+
+> **Nota:** si regeneras el token con `drf_create_token`, el anterior deja de
+> funcionar (el token se reemplaza).
+
+---
+
+### 1.4 Ejemplo de uso en Thunder Client
+
+1. Crea la petición `POST http://127.0.0.1:8000/api/auth/token/`
+2. En la pestaña **Body** (JSON) pega:
+   ```json
+   { "username": "admin", "password": "admin123" }
+   ```
+3. Envía y copia el valor de `token` de la respuesta.
+4. Para cualquier otro endpoint, en la pestaña **Headers** agrega:
+   ```
+   Authorization: Token 35aaa56527362d5c325664eb9c75c7b6036c1409
+   ```
+
+### 1.5 Ejemplo de uso con cURL
+
+```bash
+# 1) Obtener token
+curl -X POST http://127.0.0.1:8000/api/auth/token/ \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+
+# 2) Listar libros enviando el token
+curl http://127.0.0.1:8000/api/libros/ \
+  -H "Authorization: Token 35aaa56527362d5c325664eb9c75c7b6036c1409"
+```
 
 ---
 
