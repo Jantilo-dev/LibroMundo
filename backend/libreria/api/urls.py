@@ -1,22 +1,18 @@
 """
 Capa api: rutas de la app.
 
-- /api/auth/token/  : obtener token (username/password)
-- /api/libros/      : CRUD libros
-- /api/pedidos/     : CRUD pedidos
+- /api/libros/          : CRUD libros
+- /api/pedidos/         : CRUD pedidos
+- /api/token/           : obtener token (definido en config/urls.py)
 """
 
-from django.urls import include, path
-from rest_framework.authtoken.views import obtain_auth_token
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 
-from .views import LibroViewSet, PedidoViewSet
-
-router = DefaultRouter()
-router.register("libros", LibroViewSet, basename="libros")
-router.register("pedidos", PedidoViewSet, basename="pedidos")
+from . import views
 
 urlpatterns = [
-    path("auth/token/", obtain_auth_token, name="auth-token"),
-    path("", include(router.urls)),
+    path("libros/", views.LibroListCreateView.as_view(), name="libro-list-create"),
+    path("libros/<int:libro_id>/", views.LibroDetailView.as_view(), name="libro-detail"),
+    path("pedidos/", views.PedidoListCreateView.as_view(), name="pedido-list-create"),
+    path("pedidos/<int:pedido_id>/", views.PedidoDetailView.as_view(), name="pedido-detail"),
 ]

@@ -2,7 +2,7 @@
 
 **Base URL:** `http://127.0.0.1:8000/api/`
 
-**Autenticación:** todas las rutas requieren el header `Authorization: Token <token>` (excepto `POST /api/auth/token/`). Sin token → `401 Unauthorized`.
+**Autenticación:** todas las rutas requieren el header `Authorization: Token <token>` (excepto `POST /api/token/`). Sin token → `401 Unauthorized`.
 
 **Formatos:** JSON. Enviar `Content-Type: application/json`.
 
@@ -73,7 +73,7 @@ python manage.py drf_create_token admin
 
 Si ya tienes usuario y contraseña, pídele el token a la API.
 
-**Endpoint:** `POST /api/auth/token/`
+**Endpoint:** `POST /api/token/`
 
 | Parámetro | Tipo | Requerido | Descripción |
 |---|---|---|---|
@@ -109,7 +109,7 @@ Si ya tienes usuario y contraseña, pídele el token a la API.
 
 ### 1.4 Ejemplo de uso en Thunder Client
 
-1. Crea la petición `POST http://127.0.0.1:8000/api/auth/token/`
+1. Crea la petición `POST http://127.0.0.1:8000/api/token/`
 2. En la pestaña **Body** (JSON) pega:
    ```json
    { "username": "admin", "password": "admin123" }
@@ -124,7 +124,7 @@ Si ya tienes usuario y contraseña, pídele el token a la API.
 
 ```bash
 # 1) Obtener token
-curl -X POST http://127.0.0.1:8000/api/auth/token/ \
+curl -X POST http://127.0.0.1:8000/api/token/ \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"admin123"}'
 
@@ -190,7 +190,7 @@ curl http://127.0.0.1:8000/api/libros/ \
 ```
 
 **Respuesta `201 Created`** — el libro creado (mismo formato del GET).  
-**Error:** `400` si falta algún campo obligatorio o el tipo es inválido.
+**Error:** `400` si falta algún campo obligatorio, el tipo es inválido o **ya existe un libro con ese título** (regla de negocio).
 
 ### `GET /api/libros/<id>/` — Obtener un libro
 
@@ -270,7 +270,7 @@ Requiere **todos** los campos (igual que el POST).
 ```
 
 **Respuesta `201 Created`** — el pedido creado (misma forma del GET).  
-**Error:** `400` si falta algún campo obligatorio o el email es inválido.
+**Errores:** `400` si falta algún campo obligatorio, el email es inválido o el `total` es negativo.
 
 ### `GET /api/pedidos/<id>/` — Obtener un pedido
 
@@ -289,10 +289,18 @@ Acepta **datos parciales** (solo los campos que se quieran cambiar). Útil para 
 { "estado": "confirmado" }
 ```
 
-Estados válidos: `pendiente`, `confirmado`, `enviado`, `completado`, `cancelado`.
+**Transiciones de estado válidas** (regla de negocio en `application/use_cases.py`):
+
+| Desde | Puede pasar a |
+|---|---|
+| `pendiente` | `confirmado`, `cancelado` |
+| `confirmado` | `enviado`, `cancelado` |
+| `enviado` | `completado`, `cancelado` |
+| `completado` | — |
+| `cancelado` | — |
 
 **Respuesta `200 OK`** — el pedido actualizado con la forma completa.  
-**Errores:** `400` (estado inválido), `404` (no existe).
+**Errores:** `400` (estado inválido o transición no permitida), `404` (no existe).
 
 ### `DELETE /api/pedidos/<id>/` — Eliminar pedido
 

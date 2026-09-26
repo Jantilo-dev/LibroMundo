@@ -3,7 +3,7 @@
 API REST propia para el proyecto **LibroMundo** (librería online).
 Reemplaza a la API compartida del curso y se conecta al proyecto React existente.
 
-Arquitectura **hexagonal** dentro de la app `libreria/`:
+Arquitectura **hexagonal** (puertos y adaptadores) dentro de la app `libreria/`:
 
 ```
 backend/
@@ -11,19 +11,26 @@ backend/
 ├── requirements.txt
 ├── config/                        # proyecto Django (settings, urls)
 └── libreria/                      # app Django
-    ├── domain/                    # entidades puras + contrato de repositorios
-    │   ├── entities.py            #   Libro y Pedido (dataclasses, sin Django)
-    │   └── repositories.py        #   interfaces (ABC) de cada repositorio
-    ├── application/
-    │   └── services.py            # casos de uso: LibroService, PedidoService
-    ├── infrastructure/
-    │   ├── models.py              # modelos ORM (Libro, Pedido) + ForeignKey
-    │   └── repositories.py        # implementacion ORM <-> entidad
-    └── api/
-        ├── serializers.py         # mapeo plano <-> forma anidada del frontend
-        ├── views.py               # vistas (sin logica de negocio)
-        └── urls.py                # rutas de la API
+    ├── domain/                    ← CORE DOMAIN (centro del hexágono)
+    │   ├── entities.py            #   Libro y Pedido (dataclasses puras, sin Django)
+    │   └── repositories.py        #   PUERTO: interfaces ABC de cada repositorio
+    ├── application/               ← APPLICATION RING
+    │   ├── use_cases.py           #   casos de uso: Listar/Crear/Actualizar/Eliminar
+    │   └── exceptions.py          #   errores de negocio (sin depender de HTTP)
+    ├── infrastructure/            ← ADAPTADOR SECUNDARIO (driven / salida)
+    │   ├── models.py              #   LibroModel, PedidoModel (ORM, detalle persistencia)
+    │   ├── repositories.py        #   DjangoLibroRepository / DjangoPedidoRepository
+    │   └── di.py                  #   fábrica que decide qué implementación usar
+    └── api/                       ← ADAPTADOR PRIMARIO (driving / entrada)
+        ├── serializers.py         #   JSON <-> entidad de dominio
+        ├── views.py               #   recibe HTTP, llama al caso de uso, responde
+        └── urls.py                #   rutas /api/libros/ y /api/pedidos/
 ```
+
+**Regla de dependencia (clave):** las flechas siempre apuntan HACIA el dominio.
+`api/` y `infrastructure/` conocen a `application/` y `domain/`; pero `domain/`
+y `application/` NUNCA importan Django, DRF ni HTTP. Por eso se puede cambiar
+de framework web o de motor de base de datos sin tocar la lógica de negocio.
 
 ---
 
@@ -78,7 +85,7 @@ Authorization: Token <tu_token>
 Tambien se puede obtener por HTTP:
 
 ```
-POST /api/auth/token/
+POST /api/token/
 Body: { "username": "admin", "password": "tu_password" }
 Respuesta: { "token": "..." }
 ```
@@ -88,13 +95,13 @@ Sin token, la API responde `401 Unauthorized`.
 ## 4. Endpoints
 
 Todas las rutas requieren `Authorization: Token <token>` excepto
-`POST /api/auth/token/`.
+`POST /api/token/`.
 
 ### Autenticacion
 
 | Metodo | URL                    | Descripcion                        |
 |--------|------------------------|------------------------------------|
-| POST   | `/api/auth/token/`     | Obtener token con usuario/contraseña |
+| POST   | `/api/token/`          | Obtener token con usuario/contraseña |
 
 ### Libros (entidad principal / catalogo)
 
@@ -168,12 +175,20 @@ Body: { "estado": "confirmado" }
 
 Django usa SQLite (relacional), no MongoDB. Por eso:
 
-- **Libro** (catalogo): columnas directas.
-- **Pedido**: ForeignKey hacia `Libro` + columnas aplanadas
+- **Libro** (`LibroModel`, catalogo): columnas directas.
+- **Pedido** (`PedidoModel`): ForeignKey hacia `LibroModel` + columnas aplanadas
   (`cliente_nombre`, `cliente_email`, `cliente_direccion`) + `items` (JSONField)
   para varios libros por pedido sin crear una tercera tabla.
 
-## 6. Conectar el frontend React
+## 6. Reglas de negocio (en `application/use_cases.py`)
+
+- **Libro duplicado**: no se permite crear un libro con un titulo que ya existe → `400`.
+- **Total de pedido**: no puede ser negativo → `400`.
+- **Transicion de estados**: solo se aceptan transiciones válidas
+  (`pendiente → confirmado → enviado → completado`; `cancelado` desde
+  cualquiera). Cualquier otra → `400`.
+
+## 7. Conectar el frontend React
 
 En `src/services/api.js` del proyecto React, apuntar a este backend
 y agregar el header de autenticacion en cada `fetch`:

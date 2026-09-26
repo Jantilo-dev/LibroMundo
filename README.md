@@ -11,8 +11,22 @@ React 18 + Vite 5 + Bootstrap 5 + react-router-dom.
 - [Instalacion](#instalacion)
 - [Estructura](#estructura)
 - [Componentes](#componentes)
+- [Backend (Django API)](#backend-django-api)
 - [API / Endpoints](#api--endpoints)
 - [Flujo de compra](#flujo-de-compra)
+
+---
+
+## Backend (Django API)
+
+Este proyecto se conecta a un backend propio construido con **Django REST Framework**
+(arquitectura hexagonal) ubicado en la carpeta `backend/`:
+
+- [README del Backend](backend/README.md) — instalación, superusuario/token y endpoints
+- [Documentación de Endpoints](backend/API_DOCUMENTATION.md) — endpoints, ejemplos request/response y códigos de estado
+
+Para conectar este frontend al backend, configura en `.env` la URL del API y el token
+(ver [README del Backend](backend/README.md)).
 
 ---
 

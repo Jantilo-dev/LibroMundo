@@ -1,112 +1,173 @@
 """
-Capa api: vistas.
+ADAPTADOR PRIMARIO (Driving Adapter) - API REST
+---------------------------------------------------
+Estas vistas son la "puerta de entrada" HTTP: reciben el request,
+lo validan/deserializan con el Serializer, llaman al caso de uso
+correspondiente (application/use_cases.py) y devuelven la respuesta
+HTTP con el codigo correcto. NO contienen logica de negocio - esa
+vive en los casos de uso.
 
-Las vistas NO contienen logica de negocio: delegan en los servicios
-de la capa application y se encargan solo de entrada/salida HTTP.
+Requieren autenticacion por token:
+    Authorization: Token <token>
 """
 
-from rest_framework import status, viewsets
-from rest_framework.response import Response
+from dataclasses import asdict
 
-from ..application.services import LibroService, PedidoService
-from ..domain.entities import Libro, Pedido
-from ..infrastructure.repositories import ORMLibroRepository, ORMPedidoRepository
+from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from ..application.exceptions import (
+    EstadoInvalidoError,
+    LibroDuplicadoError,
+    LibroNoEncontradoError,
+    PedidoNoEncontradoError,
+)
+from ..application.use_cases import (
+    ActualizarLibroUseCase,
+    ActualizarPedidoUseCase,
+    CrearLibroUseCase,
+    CrearPedidoUseCase,
+    EliminarLibroUseCase,
+    EliminarPedidoUseCase,
+    ListarLibrosUseCase,
+    ListarPedidosUseCase,
+    ObtenerLibroUseCase,
+    ObtenerPedidoUseCase,
+)
+from ..infrastructure.di import get_libro_repository, get_pedido_repository
 from .serializers import LibroSerializer, PedidoSerializer
 
 
-class LibroViewSet(viewsets.ViewSet):
-    """CRUD completo de libros (entidad principal)."""
+# ------------------------------------------------------------------
+# LIBROS
+# ------------------------------------------------------------------
 
-    @property
-    def service(self) -> LibroService:
-        return LibroService(ORMLibroRepository())
+class LibroListCreateView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
-    def list(self, request):
-        libros = self.service.get_all()
-        return Response(LibroSerializer(libros, many=True).data)
+    def get(self, request):
+        """GET /api/libros/ -> lista todos los libros"""
+        repo = get_libro_repository()
+        libros = ListarLibrosUseCase(repo).ejecutar()
+        data = LibroSerializer([asdict(l) for l in libros], many=True).data
+        return Response(data, status=status.HTTP_200_OK)
 
-    def retrieve(self, request, pk=None):
-        libro = self.service.get(pk)
-        if not libro:
-            return Response({"detail": "No encontrado."}, status=status.HTTP_404_NOT_FOUND)
-        return Response(LibroSerializer(libro).data)
-
-    def create(self, request):
+    def post(self, request):
+        """POST /api/libros/ -> crea un libro nuevo"""
         serializer = LibroSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        entity = Libro(id=None, **serializer.validated_data)
-        created = self.service.create(entity)
-        return Response(LibroSerializer(created).data, status=status.HTTP_201_CREATED)
 
-    def update(self, request, pk=None):
-        existing = self.service.get(pk)
-        if not existing:
-            return Response({"detail": "No encontrado."}, status=status.HTTP_404_NOT_FOUND)
-        serializer = LibroSerializer(data=request.data)
+        repo = get_libro_repository()
+        try:
+            libro = CrearLibroUseCase(repo).ejecutar(serializer.validated_data)
+        except LibroDuplicadoError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(LibroSerializer(asdict(libro)).data, status=status.HTTP_201_CREATED)
+
+
+class LibroDetailView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, libro_id):
+        """GET /api/libros/<id>/ -> detalle de un libro"""
+        repo = get_libro_repository()
+        try:
+            libro = ObtenerLibroUseCase(repo).ejecutar(libro_id)
+        except LibroNoEncontradoError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        return Response(LibroSerializer(asdict(libro)).data, status=status.HTTP_200_OK)
+
+    def put(self, request, libro_id):
+        """PUT /api/libros/<id>/ -> actualiza un libro"""
+        serializer = LibroSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        entity = Libro(id=existing.id, **serializer.validated_data)
-        updated = self.service.update(entity)
-        return Response(LibroSerializer(updated).data)
 
-    def destroy(self, request, pk=None):
-        self.service.delete(pk)
+        repo = get_libro_repository()
+        try:
+            libro = ActualizarLibroUseCase(repo).ejecutar(libro_id, serializer.validated_data)
+        except LibroNoEncontradoError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(LibroSerializer(asdict(libro)).data, status=status.HTTP_200_OK)
+
+    def delete(self, request, libro_id):
+        """DELETE /api/libros/<id>/ -> elimina un libro"""
+        repo = get_libro_repository()
+        try:
+            EliminarLibroUseCase(repo).ejecutar(libro_id)
+        except LibroNoEncontradoError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class PedidoViewSet(viewsets.ViewSet):
-    """CRUD completo de pedidos (entidad secundaria)."""
+# ------------------------------------------------------------------
+# PEDIDOS
+# ------------------------------------------------------------------
 
-    @property
-    def service(self) -> PedidoService:
-        return PedidoService(ORMPedidoRepository())
+class PedidoListCreateView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
-    def list(self, request):
-        pedidos = self.service.get_all()
+    def get(self, request):
+        """GET /api/pedidos/ -> lista todos los pedidos"""
+        repo = get_pedido_repository()
+        pedidos = ListarPedidosUseCase(repo).ejecutar()
         datos = [PedidoSerializer.to_frontend(p) for p in pedidos]
-        return Response({"datos": datos})
+        return Response({"datos": datos}, status=status.HTTP_200_OK)
 
-    def retrieve(self, request, pk=None):
-        pedido = self.service.get(pk)
-        if not pedido:
-            return Response({"detail": "No encontrado."}, status=status.HTTP_404_NOT_FOUND)
-        return Response({"datos": PedidoSerializer.to_frontend(pedido)})
-
-    def create(self, request):
+    def post(self, request):
+        """POST /api/pedidos/ -> crea un pedido nuevo"""
         serializer = PedidoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        entity = PedidoSerializer.to_entity(serializer.validated_data)
-        created = self.service.create(entity)
-        return Response(
-            PedidoSerializer.to_frontend(created),
-            status=status.HTTP_201_CREATED,
-        )
 
-    def update(self, request, pk=None):
-        existing = self.service.get(pk)
-        if not existing:
-            return Response({"detail": "No encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        repo = get_pedido_repository()
+        try:
+            pedido = CrearPedidoUseCase(repo).ejecutar(serializer.validated_data)
+        except EstadoInvalidoError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+        return Response(PedidoSerializer.to_frontend(pedido), status=status.HTTP_201_CREATED)
+
+
+class PedidoDetailView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pedido_id):
+        """GET /api/pedidos/<id>/ -> detalle de un pedido"""
+        repo = get_pedido_repository()
+        try:
+            pedido = ObtenerPedidoUseCase(repo).ejecutar(pedido_id)
+        except PedidoNoEncontradoError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"datos": PedidoSerializer.to_frontend(pedido)}, status=status.HTTP_200_OK)
+
+    def put(self, request, pedido_id):
+        """PUT /api/pedidos/<id>/ -> actualiza un pedido (acepta parcial)"""
         serializer = PedidoSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        patch = serializer.validated_data
-        cliente = patch.get("cliente", {})
-        fecha = patch.get("fecha")
 
-        entity = Pedido(
-            id=existing.id,
-            libro=patch.get("libro", existing.libro),
-            cliente_nombre=cliente.get("nombre", existing.cliente_nombre),
-            cliente_email=cliente.get("email", existing.cliente_email),
-            cliente_direccion=cliente.get("direccion", existing.cliente_direccion),
-            items=patch.get("items", existing.items),
-            total=patch.get("total", existing.total),
-            metodo_entrega=patch.get("metodoEntrega", existing.metodo_entrega),
-            estado=patch.get("estado", existing.estado),
-            fecha=fecha.isoformat() if fecha else existing.fecha,
-        )
-        updated = self.service.update(entity)
-        return Response(PedidoSerializer.to_frontend(updated))
+        repo = get_pedido_repository()
+        try:
+            pedido = ActualizarPedidoUseCase(repo).ejecutar(pedido_id, serializer.validated_data)
+        except PedidoNoEncontradoError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except EstadoInvalidoError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    def destroy(self, request, pk=None):
-        self.service.delete(pk)
+        return Response(PedidoSerializer.to_frontend(pedido), status=status.HTTP_200_OK)
+
+    def delete(self, request, pedido_id):
+        """DELETE /api/pedidos/<id>/ -> elimina un pedido"""
+        repo = get_pedido_repository()
+        try:
+            EliminarPedidoUseCase(repo).ejecutar(pedido_id)
+        except PedidoNoEncontradoError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,13 +1,15 @@
 """
-Capa de infraestructura: modelos ORM de Django.
-
-Solo definen la persistencia de datos. NO contienen reglas de negocio.
+Modelo de Django ORM. OJO: esto NO es la entidad de dominio, es el
+detalle de persistencia. Solo se usa aca adentro (infrastructure/)
+para hablar con la base de datos - el resto de la app (application/,
+api/) nunca importa esta clase directamente, solo conoce las entidades
+Libro y Pedido de domain/entities.py.
 """
 
 from django.db import models
 
 
-class Libro(models.Model):
+class LibroModel(models.Model):
     """Tabla del catalogo (entidad principal)."""
 
     title = models.CharField(max_length=200)
@@ -21,14 +23,17 @@ class Libro(models.Model):
     pages = models.IntegerField()
     video = models.CharField(max_length=64, blank=True, default="")
 
+    class Meta:
+        db_table = "libreria_libro"
+
     def __str__(self):
         return self.title
 
 
-class Pedido(models.Model):
+class PedidoModel(models.Model):
     """Tabla de pedidos (entidad secundaria).
 
-    Se relaciona con Libro mediante ForeignKey y guarda el detalle
+    Se relaciona con LibroModel mediante ForeignKey y guarda el detalle
     de varios libros en ``items`` (JSONField), aplanando el subdocumento
     ``cliente`` en columnas directas.
     """
@@ -42,7 +47,7 @@ class Pedido(models.Model):
     ]
 
     libro = models.ForeignKey(
-        Libro,
+        LibroModel,
         on_delete=models.CASCADE,
         related_name="pedidos",
         null=True,
@@ -58,6 +63,9 @@ class Pedido(models.Model):
         max_length=20, choices=ESTADOS, default="pendiente"
     )
     fecha = models.DateField()
+
+    class Meta:
+        db_table = "libreria_pedido"
 
     def __str__(self):
         return f"Pedido {self.pk or '-'} - {self.cliente_nombre}"

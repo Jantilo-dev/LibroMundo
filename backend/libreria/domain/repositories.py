@@ -1,8 +1,13 @@
 """
-Capa de dominio: contrato de los repositorios.
-
-Definen las operaciones que cada repositorio debe ofrecer,
-sin importar la tecnologia con la que se implemente (ORM, archivo, API...).
+PUERTO (Port) de salida
+-------------------------
+Es un CONTRATO (interfaz abstracta), no una implementacion. El
+dominio y los casos de uso dependen de ESTA interfaz, nunca de
+Django ORM directamente (principio de inversion de dependencias).
+Quien implemente esta interfaz (en infrastructure/) es un
+"adaptador secundario" (driven adapter) - hoy puede ser Django
+ORM + SQLite, mañana podria ser MongoDB, sin que la logica de
+negocio se entere.
 """
 
 from abc import ABC, abstractmethod
@@ -13,43 +18,39 @@ from .entities import Libro, Pedido
 
 class LibroRepository(ABC):
     @abstractmethod
-    def list(self) -> list[Libro]:
+    def listar(self) -> list[Libro]:
         """Devuelve todos los libros."""
 
     @abstractmethod
-    def get(self, id: int) -> Optional[Libro]:
+    def obtener_por_id(self, libro_id: int) -> Optional[Libro]:
         """Devuelve un libro por su id o None si no existe."""
 
     @abstractmethod
-    def create(self, libro: Libro) -> Libro:
-        """Persiste un libro nuevo."""
+    def existe_titulo(self, titulo: str) -> bool:
+        """Indica si ya existe un libro con ese titulo."""
 
     @abstractmethod
-    def update(self, libro: Libro) -> Libro:
-        """Actualiza un libro existente."""
+    def guardar(self, libro: Libro) -> Libro:
+        """Crea el libro si no tiene id, o lo actualiza si ya existe."""
 
     @abstractmethod
-    def delete(self, id: int) -> None:
-        """Elimina un libro por su id."""
+    def eliminar(self, libro_id: int) -> bool:
+        """Elimina un libro. Devuelve True si se elimino algo."""
 
 
 class PedidoRepository(ABC):
     @abstractmethod
-    def list(self) -> list[Pedido]:
+    def listar(self) -> list[Pedido]:
         """Devuelve todos los pedidos."""
 
     @abstractmethod
-    def get(self, id: int) -> Optional[Pedido]:
+    def obtener_por_id(self, pedido_id: int) -> Optional[Pedido]:
         """Devuelve un pedido por su id o None si no existe."""
 
     @abstractmethod
-    def create(self, pedido: Pedido) -> Pedido:
-        """Persiste un pedido nuevo."""
+    def guardar(self, pedido: Pedido) -> Pedido:
+        """Crea el pedido si no tiene id, o lo actualiza si ya existe."""
 
     @abstractmethod
-    def update(self, pedido: Pedido) -> Pedido:
-        """Actualiza un pedido existente."""
-
-    @abstractmethod
-    def delete(self, id: int) -> None:
-        """Elimina un pedido por su id."""
+    def eliminar(self, pedido_id: int) -> bool:
+        """Elimina un pedido. Devuelve True si se elimino algo."""
