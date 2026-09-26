@@ -31,7 +31,9 @@ export default function AdminPanel() {
   }
 
   function handleEdit(pedido) {
-    setEditId(pedido._id);
+    // MODIFICADO (backend propio Django): la API devuelve `id` (relacional),
+    // antes usaba `_id` (MongoDB). Sin este cambio el PUT iba a /pedidos/undefined/ -> 404.
+    setEditId(pedido.id);
     setEditForm({ estado: pedido.estado });
     setShowEdit(true);
   }
@@ -105,7 +107,8 @@ export default function AdminPanel() {
             </thead>
             <tbody>
               {pedidos.map(p => (
-                <tr key={p._id}>
+                // MODIFICADO: `p._id` (Mongo) -> `p.id` (backend Django relacional)
+                <tr key={p.id}>
                   <td>{p.cliente?.nombre || '-'}</td>
                   <td>{p.cliente?.email || '-'}</td>
                   <td>{p.items?.length || 0}</td>
@@ -118,13 +121,13 @@ export default function AdminPanel() {
                   </td>
                   <td>{p.fecha || '-'}</td>
                   <td>
-                    <Button variant="outline-info" size="sm" className="me-1" onClick={() => handleViewDetail(p._id)}>
+                    <Button variant="outline-info" size="sm" className="me-1" onClick={() => handleViewDetail(p.id)}>
                       <FaEye />
                     </Button>
                     <Button variant="outline-primary" size="sm" className="me-1" onClick={() => handleEdit(p)}>
                       <FaEdit />
                     </Button>
-                    <Button variant="outline-danger" size="sm" onClick={() => handleDelete(p._id)}>
+                    <Button variant="outline-danger" size="sm" onClick={() => handleDelete(p.id)}>
                       <FaTrash />
                     </Button>
                   </td>
